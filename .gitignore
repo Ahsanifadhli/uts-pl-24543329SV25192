@@ -1,0 +1,25 @@
+# Berkas environment (berisi nilai rahasia — jangan di-commit)
+.env
+backend/.env
+frontend/.env
+*.env.backup
+
+# Dependensi
+/backend/vendor
+/frontend/node_modules
+/frontend/dist
+
+# Berkas basis data lokal
+*.sqlite
+*.sqlite-journal
+
+# Log & cache
+/backend/storage/*.key
+npm-debug.log*
+yarn-error.log*
+
+# Berkas editor / OS
+.idea
+.vscode
+.DS_Store
+Thumbs.db
