@@ -20,5 +20,5 @@ php artisan db:seed --force
 # Bangun ulang cache konfigurasi
 php artisan config:cache
 
-# Jalankan server aplikasi
-php artisan serve --host=0.0.0.0 --port=8000
+# Jalankan FrankenPHP sebagai server aplikasi (menggantikan php artisan serve)
+exec frankenphp run --config /etc/frankenphp/Caddyfile --adapter caddyfile
