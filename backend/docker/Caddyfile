@@ -1,0 +1,17 @@
+{
+	frankenphp
+	order php_server before file_server
+}
+
+:8000 {
+	root * /app/public
+	encode zstd br gzip
+
+	# Catat setiap permintaan ke stdout (terlihat di log container)
+	log {
+		output stdout
+		format console
+	}
+
+	php_server
+}
