@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, 'feature/**']
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  # ------------------------------------------------------------
+  # Job 1 — Pengujian Backend Laravel
+  # ------------------------------------------------------------
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Siapkan PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, zip
+
+      - name: Pasang dependensi Composer
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Siapkan environment
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Jalankan php artisan test
+        working-directory: backend
+        run: php artisan test
+
+  # ------------------------------------------------------------
+  # Job 2 — Build Frontend Vue
+  # ------------------------------------------------------------
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Pasang dependensi
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build aplikasi
+        working-directory: frontend
+        run: npm run build
+
+  # ------------------------------------------------------------
+  # Job 3 — Deploy: build & push image ke GHCR
+  # Hanya berjalan untuk push ke branch main.
+  # ------------------------------------------------------------
+  deploy:
+    name: Deploy ke GHCR
+    needs: [test-backend, build-frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    # Nilai rahasia diambil dari GitHub Secrets, bukan dari repository
+    env:
+      APP_KEY: ${{ secrets.APP_KEY }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Siapkan nama pemilik image huruf kecil
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - name: Login ke GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build dan push image backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ env.OWNER }}/spira-backend:${{ github.sha }}
+
+      - name: Build dan push image frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ghcr.io/${{ env.OWNER }}/spira-frontend:${{ github.sha }}
