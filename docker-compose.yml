@@ -1,5 +1,4 @@
-# Seluruh sistem SPIRA dijalankan dengan: docker compose up -d --build
-# Catatan: service backend & frontend akan ditambahkan pada tahap berikutnya.
+# Menjalankan seluruh sistem SPIRA dengan: docker compose up -d --build
 services:
   # --- Basis Data MySQL ---
   db:
@@ -20,6 +19,40 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # --- Backend Laravel ---
+  backend:
+    build: ./backend
+    container_name: spira-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: ${APP_DEBUG}
+      DB_CONNECTION: mysql
+      DB_HOST: db            # terhubung ke basis data lewat nama service
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8000:8000"
+
+  # --- Frontend Vue (disajikan Nginx) ---
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api   # Nginx meneruskan /api ke service backend
+    container_name: spira-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
 
 # Named volume agar data basis data tetap bertahan setelah `docker compose down`
 volumes:
