@@ -1,0 +1,22 @@
+# Dependensi (dipasang ulang di dalam image)
+/vendor
+/node_modules
+
+# Berkas rahasia & lingkungan lokal
+.env
+.env.backup
+
+# Basis data lokal & cache
+/storage/*.key
+/storage/logs/*.log
+.phpunit.result.cache
+/.phpunit.cache
+
+# Berkas Docker
+Dockerfile
+.dockerignore
+
+# Git & editor
+/.git
+.idea
+.vscode
