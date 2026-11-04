@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Catatan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class CatatanController extends Controller
 {
@@ -24,9 +26,28 @@ class CatatanController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $this->validateData($request);
+        try {
+            $validated = $this->validateData($request);
+        } catch (ValidationException $e) {
+            // Log terstruktur (warning): siapa, aksi, dan sebab (hanya nama
+            // field yang gagal — nilai input tidak dicatat agar tidak bocor).
+            Log::warning('Validasi pembuatan catatan gagal', [
+                'user_id' => $request->user()->id,
+                'aksi' => 'menyimpan catatan',
+                'sebab' => array_keys($e->errors()),
+            ]);
+
+            throw $e;
+        }
 
         $catatan = $request->user()->catatan()->create($validated);
+
+        // Log terstruktur (info): siapa, aksi, dan konteks catatan yang dibuat.
+        Log::info('Catatan berhasil disimpan', [
+            'user_id' => $request->user()->id,
+            'aksi' => 'menyimpan catatan',
+            'catatan_id' => $catatan->id,
+        ]);
 
         return response()->json($catatan, 201);
     }
