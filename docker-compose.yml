@@ -19,6 +19,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Batasi ukuran berkas log container agar tidak membengkak
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # --- Backend Laravel ---
   backend:
@@ -32,6 +38,7 @@ services:
       APP_ENV: ${APP_ENV}
       APP_KEY: ${APP_KEY}
       APP_DEBUG: ${APP_DEBUG}
+      LOG_CHANNEL: stdout    # log Laravel keluar ke stdout container
       DB_CONNECTION: mysql
       DB_HOST: db            # terhubung ke basis data lewat nama service
       DB_PORT: 3306
@@ -40,6 +47,20 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8000:8000"
+    # Memeriksa endpoint /health yang menguji basis data dan cache.
+    # /health membalas 503 bila ada komponen gagal, sehingga wget keluar
+    # dengan kode error dan status container menjadi unhealthy.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # --- Frontend Vue (disajikan Nginx) ---
   frontend:
@@ -53,6 +74,11 @@ services:
       - backend
     ports:
       - "8080:80"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # Named volume agar data basis data tetap bertahan setelah `docker compose down`
 volumes:
