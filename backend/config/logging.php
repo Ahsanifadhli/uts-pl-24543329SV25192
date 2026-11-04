@@ -105,6 +105,19 @@ return [
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
+        // Menulis log ke stdout container (bukan ke berkas), agar terbaca
+        // lewat "docker compose logs". Format JSON agar log terstruktur.
+        'stdout' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => 'php://stdout',
+            ],
+            'formatter' => \Monolog\Formatter\JsonFormatter::class,
+            'processors' => [PsrLogMessageProcessor::class],
+        ],
+
         'syslog' => [
             'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
