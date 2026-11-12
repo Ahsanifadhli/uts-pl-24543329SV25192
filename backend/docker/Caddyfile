@@ -1,6 +1,13 @@
 {
 	frankenphp
 	order php_server before file_server
+
+	# Admin API dibuka agar Prometheus dapat mengambil metrik dari luar container.
+	admin 0.0.0.0:2019
+	# Aktifkan metrik HTTP Caddy (sumber data "permintaan per detik").
+	servers {
+		metrics
+	}
 }
 
 :8000 {

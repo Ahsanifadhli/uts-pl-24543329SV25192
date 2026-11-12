@@ -1,0 +1,15 @@
+# Aturan alarm untuk sistem SPIRA.
+groups:
+  - name: ketersediaan-layanan
+    rules:
+      # Alarm berbunyi ketika target backend tidak dapat dipantau
+      # (tidak merespons scrape) selama lebih dari satu menit.
+      - alert: BackendTidakDapatDipantau
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          ringkasan: "Layanan backend SPIRA tidak merespons pemantauan."
+          deskripsi: "Prometheus gagal mengambil metrik dari backend selama lebih dari 1 menit, kemungkinan layanan mati atau tidak sehat."
+          tindakan_pertama: "Periksa status container dengan menjalankan docker compose ps, lalu baca penyebabnya melalui docker compose logs backend, kemudian nyalakan kembali dengan docker compose up -d backend."

@@ -1,0 +1,12 @@
+# Dashboard dimuat otomatis dari berkas JSON yang sudah ter-commit.
+apiVersion: 1
+
+providers:
+  - name: SPIRA
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

@@ -80,6 +80,102 @@ services:
         max-size: "10m"
         max-file: "3"
 
-# Named volume agar data basis data tetap bertahan setelah `docker compose down`
+  # ======================================================================
+  # Layanan Pemantauan (Observability)
+  # ======================================================================
+
+  # --- Prometheus: mengumpulkan dan menyimpan metrik ---
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: spira-prometheus
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - cadvisor
+      - node-exporter
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- Grafana: menampilkan metrik dalam dashboard ---
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: spira-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      # Password admin diganti dari bawaan admin/admin demi keamanan dasar.
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-SpiraGrafana2026}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- cAdvisor: metrik CPU dan memori tiap container ---
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: spira-cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8081:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- node-exporter: metrik host (CPU, memori, disk) ---
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: spira-node-exporter
+    restart: unless-stopped
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Named volume agar data tetap bertahan setelah `docker compose down`
 volumes:
   spira_db_data:
+  prometheus_data:    # data metrik Prometheus
+  grafana_data:       # data dan pengaturan Grafana
