@@ -1,0 +1,30 @@
+# Konfigurasi Prometheus untuk memantau sistem SPIRA.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Berkas aturan alarm dimuat dari sini.
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # Prometheus memantau dirinya sendiri.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # cAdvisor menyediakan metrik CPU dan memori tiap container.
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  # node-exporter menyediakan metrik host (CPU, memori, disk).
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Backend Laravel (FrankenPHP/Caddy) menyediakan metrik HTTP.
+  - job_name: backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:2019"]

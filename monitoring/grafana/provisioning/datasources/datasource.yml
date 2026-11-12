@@ -1,0 +1,12 @@
+# Sumber data Prometheus didaftarkan otomatis saat Grafana dinyalakan,
+# sehingga panel dashboard langsung memiliki data.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    uid: prometheus
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
